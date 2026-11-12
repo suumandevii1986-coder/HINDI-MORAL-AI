@@ -1,0 +1,13 @@
+name: Daily AI Automation
+
+on:
+  schedule:
+    - cron: '30 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  automation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Start Automation
+        run: echo "Daily Moral Story Automation Started!"
