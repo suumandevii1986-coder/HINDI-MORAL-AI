@@ -20,24 +20,33 @@ Sirf Hindi mein likho.
 """
 
 response = requests.post(
-    url,
-    headers={
-        "x-goog-api-key": API_KEY,
-        "Content-Type": "application/json"
-    },
-    json={
-        "contents": [
-            {"parts": [{"text": prompt}]}
-        ],
-        "generationConfig": {
-            "temperature": 0.9,
-            "maxOutputTokens": 8192
-        }
-    },
-    timeout=180
-)
+    import time
+     url,
+        headers={
+            "x-goog-api-key": API_KEY,
+            "Content-Type": "application/json"
+        },
+        json={
+            "contents": [
+                {"parts": [{"text": prompt}]}
+            ],
+            "generationConfig": {
+                "temperature": 0.9,
+                "maxOutputTokens": 8192
+            }
+        },
+        timeout=180
+    )
 
+    if response.status_code in [429, 500, 502, 503, 504]:
+        print(f"Retry {attempt + 1}/5")
+        time.sleep(2 ** (attempt + 1))
+        continue
+        
 response.raise_for_status()
+    break
+else:
+    raise Exception("Gemini service unavailable after 5 attempts")
 
 story = response.json()["candidates"][0]["content"]["parts"][0]["text"]
 
