@@ -1,13 +1,37 @@
-name: Daily AI Automation
+name: Daily Hindi Moral Story
 
 on:
   schedule:
     - cron: '30 3 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  automation:
+  generate:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Start Automation
-        run: echo "Daily Moral Story Automation Started!"
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install requirements
+        run: pip install requests
+
+      - name: Generate Story
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python generate_story.py
+
+      - name: Save Story
+        uses: actions/upload-artifact@v4
+        with:
+          name: hindi-moral-story
+          path: story.txt
+          retention-days: 7
