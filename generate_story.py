@@ -1,56 +1,105 @@
 import os
+import time
 import requests
 from datetime import datetime
 
-API_KEY = os.environ["GEMINI_API_KEY"]
+API_KEY = os.environ.get("GEMINI_API_KEY")
 
-url = (
-    "https://generativelanguage.googleapis.com/v1beta/"
-    "models/gemini-3.5-flash-lite:generateContent"
+if not API_KEY:
+    raise ValueError("GEMINI_API_KEY secret missing!")
+
+MODEL = "gemini-3.5-flash-lite"
+
+URL = (
+    f"https://generativelanguage.googleapis.com/v1beta/"
+    f"models/{MODEL}:generateContent"
 )
 
 prompt = """
-Ek bilkul nayi Hindi moral story likho.
-Story 1200-1500 words ki ho.
-Bachchon aur family ke liye suitable ho.
-Interesting characters aur dialogues hon.
-Ending mein ek powerful moral lesson ho.
-Story original honi chahiye.
-Sirf Hindi mein likho.
+Ek original Hindi moral story likho.
+
+Requirements:
+- Story 1200-1500 words ki ho.
+- Language simple Hindi ho.
+- Interesting characters hon.
+- Powerful opening hook ho.
+- Natural dialogues hon.
+- Family friendly story ho.
+- Ending emotional aur inspiring ho.
+- Last mein ek powerful moral lesson ho.
+- Har baar nayi story honi chahiye.
+- Purani story repeat mat karna.
 """
 
-response = requests.post(
-    import time
-     url,
-        headers={
-            "x-goog-api-key": API_KEY,
-            "Content-Type": "application/json"
-        },
-        json={
-            "contents": [
-                {"parts": [{"text": prompt}]}
-            ],
-            "generationConfig": {
-                "temperature": 0.9,
-                "maxOutputTokens": 8192
-            }
-        },
-        timeout=180
+payload = {
+    "contents": [
+        {
+            "parts": [
+                {"text": prompt}
+            ]
+        }
+    ],
+    "generationConfig": {
+        "temperature": 0.9,
+        "maxOutputTokens": 8192
+    }
+}
+
+response = None
+
+for attempt in range(5):
+
+    print(f"Generating story... Attempt {attempt + 1}")
+
+    try:
+        response = requests.post(
+            URL,
+            headers={
+                "x-goog-api-key": API_KEY,
+                "Content-Type": "application/json"
+            },
+            json=payload,
+            timeout=180
+        )
+
+        if response.status_code == 200:
+            break
+
+        if response.status_code in [429, 500, 502, 503, 504]:
+            print("Temporary API error:", response.text[:1000])
+            time.sleep(2 ** (attempt + 1))
+            continue
+
+        raise Exception(
+            f"Gemini API Error {response.status_code}: "
+            f"{response.text[:2000]}"
+        )
+
+    except requests.RequestException as error:
+        print("Connection error:", error)
+        time.sleep(2 ** (attempt + 1))
+
+else:
+    raise Exception(
+        "Gemini failed after 5 attempts. "
+        "Check API availability and quota."
     )
 
-    if response.status_code in [429, 500, 502, 503, 504]:
-        print(f"Retry {attempt + 1}/5")
-        time.sleep(2 ** (attempt + 1))
-        continue
-        
-response.raise_for_status()
-    break
-else:
-    raise Exception("Gemini service unavailable after 5 attempts")
+data = response.json()
 
-story = response.json()["candidates"][0]["content"]["parts"][0]["text"]
+try:
+    story = data["candidates"][0]["content"]["parts"][0]["text"]
+except (KeyError, IndexError, TypeError):
+    raise Exception(f"Unexpected Gemini response: {data}")
 
-with open("story.txt", "w", encoding="utf-8") as f:
-    f.write(story)
+if not story.strip():
+    raise Exception("Generated story is empty!")
 
-print("Hindi moral story generated successfully!")
+filename = "story.txt"
+
+with open(filename, "w", encoding="utf-8") as file:
+    file.write(story)
+
+print("SUCCESS! Hindi moral story generated.")
+print("Characters:", len(story))
+print("Saved as:", filename)
