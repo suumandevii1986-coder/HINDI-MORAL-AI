@@ -35,10 +35,16 @@ jobs:
       - name: Generate Hindi Voice
         run: python generate_voice.py
 
-      - name: Create Long Video
+      - name: Generate AI Cartoon Images
+        env:
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: python generate_images.py
+
+      - name: Create Video
         run: python make_video.py
 
-      - name: Save All Generated Files
+      - name: Save Generated Files
         uses: actions/upload-artifact@v4
         with:
           name: Hindi-Moral-Story-Video
@@ -46,4 +52,5 @@ jobs:
             story.txt
             voice.mp3
             final_video.mp4
+            scenes/
           retention-days: 7
