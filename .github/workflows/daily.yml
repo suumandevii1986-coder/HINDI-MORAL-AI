@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Setup Python
@@ -22,7 +22,10 @@ jobs:
           python-version: '3.11'
 
       - name: Install Requirements
-        run: pip install requests gTTS
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-noto-core
+          pip install requests gTTS pillow
 
       - name: Generate Hindi Story
         env:
@@ -32,11 +35,15 @@ jobs:
       - name: Generate Hindi Voice
         run: python generate_voice.py
 
-      - name: Save Story and Voice
+      - name: Create Long Video
+        run: python make_video.py
+
+      - name: Save All Generated Files
         uses: actions/upload-artifact@v4
         with:
-          name: Hindi-Moral-Story
+          name: Hindi-Moral-Story-Video
           path: |
             story.txt
             voice.mp3
+            final_video.mp4
           retention-days: 7
