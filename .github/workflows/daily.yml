@@ -21,17 +21,22 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install requirements
-        run: pip install requests
+      - name: Install Requirements
+        run: pip install requests gTTS
 
-      - name: Generate Story
+      - name: Generate Hindi Story
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python generate_story.py
 
-      - name: Save Story
+      - name: Generate Hindi Voice
+        run: python generate_voice.py
+
+      - name: Save Story and Voice
         uses: actions/upload-artifact@v4
         with:
-          name: hindi-moral-story
-          path: story.txt
+          name: Hindi-Moral-Story
+          path: |
+            story.txt
+            voice.mp3
           retention-days: 7
